@@ -148,11 +148,13 @@ def process_factura_electronica(xml_file_path, database_name):
             insert_impuesto_retenido(conn, impuesto_data)
 
     # Obtener datos de impuestos totales
-    impuestos_total_data = [
-        comprobante_id,+
-        float(root.find('.//cfdi:Impuestos', namespaces=namespaces).get('TotalImpuestosTrasladados', 0)),
-        float(root.find('.//cfdi:Impuestos', namespaces=namespaces).get('TotalImpuestosRetenidos', 0))
-    ]
+    impuestos_element = root.find('.//cfdi:Impuestos', namespaces=namespaces)
+    impuestos_total_data = [comprobante_id]
+    if impuestos_element:
+        impuestos_total_data.append(impuestos_element.get('TotalImpuestosTrasladados', 0)),
+        impuestos_total_data.append(impuestos_element.get('TotalImpuestosRetenidos', 0))
+    else:
+        impuestos_total_data += [None, None]
 
     # Insertar impuestos totales en la base de datos
     insert_impuestos_total(conn, impuestos_total_data)
@@ -173,7 +175,7 @@ def process_facturas(xml_folder_path, database_name):
         process_factura_electronica(xml_file_path, database_name)
 
 # Ruta del archivo XML de la factura electrónica
-xml_folder_path = os.environ["XML_FOLDER"]  # Reemplaza con la ruta correcta
+xml_folder_path = os.environ["XML_FOLDER"]
 database_name = os.environ["DATABASE_FILE"]
 
 process_facturas(xml_folder_path, database_name)
