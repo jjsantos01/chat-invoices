@@ -27,7 +27,9 @@ def create_comprobantes_table(conn):
             nombre_receptor TEXT,
             regimen_fiscal_receptor TEXT,
             domicilio_fiscal_receptor TEXT,
-            uso_cfdi TEXT
+            uso_cfdi TEXT,
+            total_impuestos_trasladados REAL,
+            total_impuestos_retenidos REAL
         )
     ''')
     conn.commit()
@@ -85,20 +87,6 @@ def create_impuestos_retenidos_table(conn):
     ''')
     conn.commit()
 
-# Función para crear la tabla 'impuestos_total'
-def create_impuestos_total_table(conn):
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS impuestos_total (
-            id INTEGER PRIMARY KEY,
-            comprobante_id INTEGER,
-            total_impuestos_trasladados REAL,
-            total_impuestos_retenidos REAL,
-            FOREIGN KEY (comprobante_id) REFERENCES comprobantes(id)
-        )
-    ''')
-    conn.commit()
-
 # Función principal para crear la base de datos
 def create_database(database_name):
     conn = sqlite3.connect(database_name)
@@ -108,7 +96,6 @@ def create_database(database_name):
     create_conceptos_table(conn)
     create_impuestos_trasladados_table(conn)
     create_impuestos_retenidos_table(conn)
-    create_impuestos_total_table(conn)
 
     # Cerrar la conexión
     conn.close()

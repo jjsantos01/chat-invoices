@@ -18,8 +18,9 @@ def insert_comprobante(conn, comprobante_data):
             uuid, version, fecha, sub_total, moneda, total, tipo_de_comprobante,
             exportacion, metodo_pago, lugar_expedicion, rfc_emisor, nombre_emisor,
             regimen_fiscal_emisor, rfc_receptor, nombre_receptor, regimen_fiscal_receptor,
-            domicilio_fiscal_receptor, uso_cfdi
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            domicilio_fiscal_receptor, uso_cfdi, total_impuestos_trasladados,
+            total_impuestos_retenidos
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', comprobante_data)
     conn.commit()
     return cursor.lastrowid
@@ -54,16 +55,6 @@ def insert_impuesto_retenido(conn, impuesto_data):
             concepto_id, base, impuesto, tipo_factor, tasa_o_cuota, importe
         ) VALUES (?, ?, ?, ?, ?, ?)
     ''', impuesto_data)
-    conn.commit()
-
-# Función para insertar los totales de impuestos en la base de datos
-def insert_impuestos_total(conn, impuestos_total_data):
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO impuestos_total (
-            comprobante_id, total_impuestos_trasladados, total_impuestos_retenidos
-        ) VALUES (?, ?, ?)
-    ''', impuestos_total_data)
     conn.commit()
 
 # Función principal para procesar la factura electrónica
@@ -101,6 +92,17 @@ def process_factura_electronica(xml_file_path, database_name):
         root.find('.//cfdi:Receptor', namespaces=namespaces).get('DomicilioFiscalReceptor'),
         root.find('.//cfdi:Receptor', namespaces=namespaces).get('UsoCFDI'),
     ]
+
+    impuestos_element = root.find('cfdi:Impuestos', namespaces=namespaces)
+    if impuestos_element is not None:
+        comprobante_data.append(
+            float(impuestos_element.get('TotalImpuestosTrasladados', 0))
+            )
+        comprobante_data.append(
+            float(impuestos_element.get('TotalImpuestosRetenidos', 0))
+            )
+    else:
+        comprobante_data += [None, None]
 
     # Insertar comprobante en la base de datos
     comprobante_id = insert_comprobante(conn, comprobante_data)
@@ -148,18 +150,6 @@ def process_factura_electronica(xml_file_path, database_name):
 
             # Insertar impuesto retenido en la base de datos
             insert_impuesto_retenido(conn, impuesto_data)
-
-    # Obtener datos de impuestos totales
-    impuestos_element = root.find('cfdi:Impuestos', namespaces=namespaces)
-    impuestos_total_data = [comprobante_id]
-    if impuestos_element:
-        impuestos_total_data.append(impuestos_element.get('TotalImpuestosTrasladados', 0)),
-        impuestos_total_data.append(impuestos_element.get('TotalImpuestosRetenidos', 0))
-    else:
-        impuestos_total_data += [None, None]
-
-    # Insertar impuestos totales en la base de datos
-    insert_impuestos_total(conn, impuestos_total_data)
 
     # Cerrar la conexión
     conn.close()
