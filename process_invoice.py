@@ -86,10 +86,12 @@ def process_factura_electronica(xml_file_path, database_name):
         root.get('Version'),
         root.get('Fecha'),
         float(root.get('SubTotal', 0)),
-        root.get('Moneda'), float(root.get('Total', 0)),
+        root.get('Moneda'),
+        float(root.get('Total', 0)),
         root.get('TipoDeComprobante'),
         root.get('Exportacion'),
-        root.get('MetodoPago'), root.get('LugarExpedicion'),
+        root.get('MetodoPago'),
+        root.get('LugarExpedicion'),
         root.find('.//cfdi:Emisor', namespaces=namespaces).get('Rfc'),
         root.find('.//cfdi:Emisor', namespaces=namespaces).get('Nombre'),
         root.find('.//cfdi:Emisor', namespaces=namespaces).get('RegimenFiscal'),
@@ -148,7 +150,7 @@ def process_factura_electronica(xml_file_path, database_name):
             insert_impuesto_retenido(conn, impuesto_data)
 
     # Obtener datos de impuestos totales
-    impuestos_element = root.find('.//cfdi:Impuestos', namespaces=namespaces)
+    impuestos_element = root.find('cfdi:Impuestos', namespaces=namespaces)
     impuestos_total_data = [comprobante_id]
     if impuestos_element:
         impuestos_total_data.append(impuestos_element.get('TotalImpuestosTrasladados', 0)),
